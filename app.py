@@ -1,24 +1,85 @@
 import streamlit as st
+from datetime import datetime
 import pandas as pd
 import os
-from datetime import datetime
 
-st.title("🎤 CitizenVoice")
+st.set_page_config(page_title="Urna Digital", page_icon="🗳️")
 
-st.write("Pulsa para grabar tu opinión sobre tu municipio.")
+st.title("🗳️ URNA DIGITAL")
+st.subheader("Pon tu móvil y habla para mejorar tu ciudad")
 
-audio = st.file_uploader("Sube tu audio", type=["wav","mp3","m4a"])
+# Inicializar estado
+if "step" not in st.session_state:
+    st.session_state.step = 1
+    st.session_state.area = ""
+    st.session_state.tipo = ""
+    st.session_state.descripcion = ""
+    st.session_state.puntuacion = ""
 
-if audio is not None:
-    st.success("Audio recibido.")
+# PASO 1 — Área
+if st.session_state.step == 1:
+    st.write("### ¿Sobre qué área quieres opinar?")
+    area = st.selectbox(
+        "",
+        ["Urbanismo", "Limpieza", "Movilidad", "Seguridad", "Parques", "Otra"]
+    )
 
-    # Guardar archivo
-    file_name = f"audio_{datetime.now().strftime('%Y%m%d%H%M%S')}.wav"
-    with open(file_name, "wb") as f:
-        f.write(audio.read())
+    if st.button("Continuar"):
+        st.session_state.area = area
+        st.session_state.step = 2
 
-    # Guardar registro
-    df = pd.DataFrame([[file_name, datetime.now()]], columns=["audio_file","timestamp"])
-    df.to_csv("respuestas.csv", mode="a", header=not os.path.exists("respuestas.csv"), index=False)
+# PASO 2 — Tipo
+elif st.session_state.step == 2:
+    st.write("### ¿Qué quieres hacer?")
+    tipo = st.radio(
+        "",
+        ["Informar de una incidencia", "Hacer una propuesta"]
+    )
 
-    st.write("Gracias por participar 🙌")
+    if st.button("Continuar"):
+        st.session_state.tipo = tipo
+        st.session_state.step = 3
+
+# PASO 3 — Descripción
+elif st.session_state.step == 3:
+    st.write("### Describe la incidencia o propuesta")
+    descripcion = st.text_area("")
+
+    if st.button("Continuar"):
+        st.session_state.descripcion = descripcion
+        st.session_state.step = 4
+
+# PASO 4 — Puntuación
+elif st.session_state.step == 4:
+    st.write("### ¿Cómo valoras el servicio global?")
+    puntuacion = st.slider("", 1, 5)
+
+    if st.button("Enviar"):
+        st.session_state.puntuacion = puntuacion
+        st.session_state.step = 5
+
+# PASO FINAL — Guardar datos
+elif st.session_state.step == 5:
+
+    data = {
+        "fecha": datetime.now(),
+        "area": st.session_state.area,
+        "tipo": st.session_state.tipo,
+        "descripcion": st.session_state.descripcion,
+        "puntuacion": st.session_state.puntuacion
+    }
+
+    df = pd.DataFrame([data])
+
+    file = "respuestas.csv"
+
+    if os.path.exists(file):
+        df.to_csv(file, mode="a", header=False, index=False)
+    else:
+        df.to_csv(file, index=False)
+
+    st.success("✅ Gracias por participar.")
+    st.write("Tu voz mejora esta ciudad.")
+
+    if st.button("Nueva respuesta"):
+        st.session_state.step = 1
