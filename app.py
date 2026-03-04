@@ -1,4 +1,12 @@
-st.set_page_config(...)
+import streamlit as st
+from datetime import datetime
+import pandas as pd
+import os
+
+# CONFIGURACIÓN INICIAL
+st.set_page_config(page_title="Urna Digital", page_icon="🗳️")
+
+# ESTILO VISUAL
 st.markdown("""
     <style>
     .main {
@@ -7,9 +15,6 @@ st.markdown("""
     h1 {
         text-align: center;
         color: #1f3c88;
-    }
-    h3 {
-        color: #333333;
     }
     .stButton>button {
         background-color: #1f3c88;
@@ -22,17 +27,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-import streamlit as st
-from datetime import datetime
-import pandas as pd
-import os
-
-st.set_page_config(page_title="Urna Digital", page_icon="🗳️")
-
+# TÍTULO
 st.title("🗳️ URNA DIGITAL")
-st.subheader("Pon tu móvil y habla para mejorar tu ciudad")
+st.caption("Pon tu móvil y habla. Tu voz mejora esta ciudad.")
 
-# Inicializar estado
+# INICIALIZAR ESTADO
 if "step" not in st.session_state:
     st.session_state.step = 1
     st.session_state.area = ""
@@ -40,9 +39,11 @@ if "step" not in st.session_state:
     st.session_state.descripcion = ""
     st.session_state.puntuacion = ""
 
-# PASO 1 — Área
+# PASO 1 — ÁREA
 if st.session_state.step == 1:
-    st.write("### ¿Sobre qué área quieres opinar?")
+    st.markdown("💬 **Hola. Soy la Urna Digital.**")
+    st.markdown("¿Sobre qué área quieres opinar?")
+
     area = st.selectbox(
         "",
         ["Urbanismo", "Limpieza", "Movilidad", "Seguridad", "Parques", "Otra"]
@@ -52,9 +53,10 @@ if st.session_state.step == 1:
         st.session_state.area = area
         st.session_state.step = 2
 
-# PASO 2 — Tipo
+# PASO 2 — TIPO
 elif st.session_state.step == 2:
-    st.write("### ¿Qué quieres hacer?")
+    st.markdown("💬 ¿Quieres informar de una incidencia o hacer una propuesta?")
+
     tipo = st.radio(
         "",
         ["Informar de una incidencia", "Hacer una propuesta"]
@@ -64,25 +66,27 @@ elif st.session_state.step == 2:
         st.session_state.tipo = tipo
         st.session_state.step = 3
 
-# PASO 3 — Descripción
+# PASO 3 — DESCRIPCIÓN
 elif st.session_state.step == 3:
-    st.write("### Describe la incidencia o propuesta")
+    st.markdown("💬 Describe la incidencia o propuesta con el mayor detalle posible.")
+
     descripcion = st.text_area("")
 
     if st.button("Continuar"):
         st.session_state.descripcion = descripcion
         st.session_state.step = 4
 
-# PASO 4 — Puntuación
+# PASO 4 — PUNTUACIÓN
 elif st.session_state.step == 4:
-    st.write("### ¿Cómo valoras el servicio global?")
+    st.markdown("💬 ¿Cómo valoras el servicio global? (1 = Muy malo, 5 = Excelente)")
+
     puntuacion = st.slider("", 1, 5)
 
     if st.button("Enviar"):
         st.session_state.puntuacion = puntuacion
         st.session_state.step = 5
 
-# PASO FINAL — Guardar datos
+# PASO FINAL — GUARDAR DATOS
 elif st.session_state.step == 5:
 
     data = {
@@ -94,7 +98,6 @@ elif st.session_state.step == 5:
     }
 
     df = pd.DataFrame([data])
-
     file = "respuestas.csv"
 
     if os.path.exists(file):
