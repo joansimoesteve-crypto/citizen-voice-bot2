@@ -1,3 +1,27 @@
+st.set_page_config(...)
+st.markdown("""
+    <style>
+    .main {
+        background-color: #f4f6f8;
+    }
+    h1 {
+        text-align: center;
+        color: #1f3c88;
+    }
+    h3 {
+        color: #333333;
+    }
+    .stButton>button {
+        background-color: #1f3c88;
+        color: white;
+        border-radius: 10px;
+        height: 3em;
+        width: 100%;
+        font-size: 16px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 import streamlit as st
 from datetime import datetime
 import pandas as pd
