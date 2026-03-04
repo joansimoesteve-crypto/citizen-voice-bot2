@@ -81,13 +81,45 @@ elif st.session_state.step == 2:
 
 # PASO 3
 elif st.session_state.step == 3:
+
     st.markdown(f'<div class="user-bubble">{st.session_state.area}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="user-bubble">{st.session_state.tipo}</div>', unsafe_allow_html=True)
-    st.markdown('<div class="bot-bubble">Describe con detalle tu mensaje.</div>', unsafe_allow_html=True)
 
-    descripcion = st.text_area("")
+    st.markdown('<div class="bot-bubble">Describe tu mensaje usando voz o texto.</div>', unsafe_allow_html=True)
 
-    if st.button("Enviar"):
+    # Campo donde se mostrará la transcripción
+    descripcion = st.text_area("Tu mensaje aparecerá aquí:", key="descripcion_texto")
+
+    # BOTÓN DE VOZ (Web Speech API)
+    st.components.v1.html("""
+        <script>
+        var recognition;
+        function startRecognition() {
+            recognition = new webkitSpeechRecognition();
+            recognition.lang = "es-ES";
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.onresult = function(event) {
+                var transcript = event.results[0][0].transcript;
+                const textarea = window.parent.document.querySelector('textarea');
+                textarea.value = transcript;
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            };
+
+            recognition.start();
+        }
+        </script>
+
+        <button onclick="startRecognition()" 
+        style="background-color:#1faa59;color:white;
+        border:none;padding:12px 20px;
+        border-radius:30px;font-size:16px;">
+        🎤 Hablar
+        </button>
+    """, height=80)
+
+    if st.button("Continuar"):
         st.session_state.descripcion = descripcion
         st.session_state.step = 4
 
