@@ -5,22 +5,22 @@ import os
 
 st.set_page_config(page_title="Urna Digital", page_icon="🗳️")
 
-# ESTILO BURBUJAS + BOTONES VERDES
+# ===== ESTILOS =====
 st.markdown("""
 <style>
 body { background-color: #eef2f3; }
 .chatbot { max-width: 600px; margin:auto; }
 .bot-bubble { background-color:#e6f4ea; padding:12px 16px; border-radius:15px 15px 15px 5px; margin-bottom:10px; width:fit-content; }
 .user-bubble { background-color:#1faa59; color:white; padding:12px 16px; border-radius:15px 15px 5px 15px; margin-left:auto; margin-bottom:10px; width:fit-content; }
-button.option { background-color:#1faa59; color:white; border:none; border-radius:30px; padding:10px 18px; margin:3px; font-size:14px; cursor:pointer; display:inline-block; }
-button.option:hover { background-color:#138844; }
+.stButton>button { background-color:#1faa59; color:white; border-radius:30px; height:3em; width:100%; font-size:16px; }
+.stSlider>div>div>div { background-color:#1faa59 !important; }
 </style>
 """, unsafe_allow_html=True)
 
 st.title("🗳️ URNA DIGITAL")
 st.caption("Pon tu móvil y habla. Tu voz mejora esta ciudad.")
 
-# INICIALIZAR ESTADO
+# ===== INICIALIZAR ESTADO =====
 if "step" not in st.session_state:
     st.session_state.step = 1
     st.session_state.area = ""
@@ -30,45 +30,33 @@ if "step" not in st.session_state:
 
 st.markdown('<div class="chatbot">', unsafe_allow_html=True)
 
-# --- PASO 1: ÁREA ---
+# ===== PASO 1: ÁREA =====
 if st.session_state.step == 1:
     st.markdown('<div class="bot-bubble">Hola 👋 Soy la Urna Digital.<br>¿Sobre qué área quieres opinar?</div>', unsafe_allow_html=True)
 
-    st.markdown("""
-    <button class="option" onclick="window.parent.postMessage({func:'set_area', value:'Urbanismo'}, '*')">Urbanismo</button>
-    <button class="option" onclick="window.parent.postMessage({func:'set_area', value:'Limpieza'}, '*')">Limpieza</button>
-    <button class="option" onclick="window.parent.postMessage({func:'set_area', value:'Movilidad'}, '*')">Movilidad</button><br>
-    <button class="option" onclick="window.parent.postMessage({func:'set_area', value:'Seguridad'}, '*')">Seguridad</button>
-    <button class="option" onclick="window.parent.postMessage({func:'set_area', value:'Parques'}, '*')">Parques</button>
-    <button class="option" onclick="window.parent.postMessage({func:'set_area', value:'Otra'}, '*')">Otra</button>
-    """, unsafe_allow_html=True)
+    cols = st.columns(3)
+    areas = ["Urbanismo","Limpieza","Movilidad","Seguridad","Parques","Otra"]
+    for i, area in enumerate(areas):
+        if cols[i%3].button(area, key=f"area_{area}"):
+            st.session_state.area = area
+            st.session_state.step = 2
+            st.experimental_rerun()
 
-    # ESCUCHAR CLICK DEL HTML
-    st.components.v1.html("""
-        <script>
-        window.addEventListener('message', event => {
-            const data = event.data;
-            if (data.func == 'set_area') {
-                document.dispatchEvent(new CustomEvent('area-selected', {detail: data.value}));
-            }
-        });
-        </script>
-    """, height=0)
-
-    area = st.experimental_get_query_params().get("area", [""])[0]
-
-# --- PASO 2: TIPO ---
-if st.session_state.step == 2:
+# ===== PASO 2: TIPO =====
+elif st.session_state.step == 2:
     st.markdown(f'<div class="user-bubble">{st.session_state.area}</div>', unsafe_allow_html=True)
     st.markdown('<div class="bot-bubble">¿Quieres informar de una incidencia o hacer una propuesta?</div>', unsafe_allow_html=True)
 
-    st.markdown("""
-    <button class="option" onclick="window.parent.postMessage({func:'set_tipo', value:'Incidencia'}, '*')">Incidencia</button>
-    <button class="option" onclick="window.parent.postMessage({func:'set_tipo', value:'Propuesta'}, '*')">Propuesta</button>
-    """, unsafe_allow_html=True)
+    cols = st.columns(2)
+    tipos = ["Incidencia","Propuesta"]
+    for i, tipo in enumerate(tipos):
+        if cols[i].button(tipo, key=f"tipo_{tipo}"):
+            st.session_state.tipo = tipo
+            st.session_state.step = 3
+            st.experimental_rerun()
 
-# --- PASO 3: DESCRIPCIÓN (voz + texto) ---
-if st.session_state.step == 3:
+# ===== PASO 3: DESCRIPCIÓN (voz + texto) =====
+elif st.session_state.step == 3:
     st.markdown(f'<div class="user-bubble">{st.session_state.area}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="user-bubble">{st.session_state.tipo}</div>', unsafe_allow_html=True)
     st.markdown('<div class="bot-bubble">Describe tu mensaje usando voz o texto.</div>', unsafe_allow_html=True)
@@ -99,8 +87,8 @@ if st.session_state.step == 3:
         st.session_state.descripcion = descripcion
         st.session_state.step = 4
 
-# --- PASO 4: PUNTUACIÓN (barra) ---
-if st.session_state.step == 4:
+# ===== PASO 4: PUNTUACIÓN =====
+elif st.session_state.step == 4:
     st.markdown(f'<div class="user-bubble">{st.session_state.area}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="user-bubble">{st.session_state.tipo}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="user-bubble">{st.session_state.descripcion}</div>', unsafe_allow_html=True)
@@ -112,8 +100,8 @@ if st.session_state.step == 4:
         st.session_state.puntuacion = puntuacion
         st.session_state.step = 5
 
-# --- PASO 5: FINAL ---
-if st.session_state.step == 5:
+# ===== PASO 5: FINAL =====
+elif st.session_state.step == 5:
 
     data = {
         "fecha": datetime.now(),
