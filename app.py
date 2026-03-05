@@ -5,15 +5,14 @@ import os
 
 st.set_page_config(page_title="Urna Digital", page_icon="🗳️")
 
-# ESTILO VERDE + BURBUJAS + BOTONES CIRCULARES
+# ESTILO BURBUJAS + BOTONES VERDES
 st.markdown("""
 <style>
 body { background-color: #eef2f3; }
-.chatbot { max-width: 600px; margin: auto; }
-.bot-bubble { background-color: #e6f4ea; padding: 12px 16px; border-radius: 15px 15px 15px 5px; margin-bottom: 10px; width: fit-content; }
-.user-bubble { background-color: #1faa59; color: white; padding: 12px 16px; border-radius: 15px 15px 5px 15px; margin-left: auto; margin-bottom: 10px; width: fit-content; }
-.stButton>button { background-color: #1faa59; color: white; border-radius: 10px; height: 3em; width: 100%; font-size: 16px; }
-button.option { background-color: #1faa59; color: white; border:none; border-radius:30px; padding:12px 20px; margin:5px; font-size:16px; cursor:pointer; }
+.chatbot { max-width: 600px; margin:auto; }
+.bot-bubble { background-color:#e6f4ea; padding:12px 16px; border-radius:15px 15px 15px 5px; margin-bottom:10px; width:fit-content; }
+.user-bubble { background-color:#1faa59; color:white; padding:12px 16px; border-radius:15px 15px 5px 15px; margin-left:auto; margin-bottom:10px; width:fit-content; }
+button.option { background-color:#1faa59; color:white; border:none; border-radius:30px; padding:10px 18px; margin:3px; font-size:14px; cursor:pointer; display:inline-block; }
 button.option:hover { background-color:#138844; }
 </style>
 """, unsafe_allow_html=True)
@@ -21,12 +20,13 @@ button.option:hover { background-color:#138844; }
 st.title("🗳️ URNA DIGITAL")
 st.caption("Pon tu móvil y habla. Tu voz mejora esta ciudad.")
 
+# INICIALIZAR ESTADO
 if "step" not in st.session_state:
     st.session_state.step = 1
     st.session_state.area = ""
     st.session_state.tipo = ""
     st.session_state.descripcion = ""
-    st.session_state.puntuacion = ""
+    st.session_state.puntuacion = 0
 
 st.markdown('<div class="chatbot">', unsafe_allow_html=True)
 
@@ -34,29 +34,41 @@ st.markdown('<div class="chatbot">', unsafe_allow_html=True)
 if st.session_state.step == 1:
     st.markdown('<div class="bot-bubble">Hola 👋 Soy la Urna Digital.<br>¿Sobre qué área quieres opinar?</div>', unsafe_allow_html=True)
 
-    cols = st.columns(3)
-    areas = ["Urbanismo","Limpieza","Movilidad","Seguridad","Parques","Otra"]
-    for i, area in enumerate(areas):
-        if cols[i%3].button(area, key=f"area_{area}", help="Selecciona esta área"):
-            st.session_state.area = area
-            st.session_state.step = 2
-            st.experimental_rerun()
+    st.markdown("""
+    <button class="option" onclick="window.parent.postMessage({func:'set_area', value:'Urbanismo'}, '*')">Urbanismo</button>
+    <button class="option" onclick="window.parent.postMessage({func:'set_area', value:'Limpieza'}, '*')">Limpieza</button>
+    <button class="option" onclick="window.parent.postMessage({func:'set_area', value:'Movilidad'}, '*')">Movilidad</button><br>
+    <button class="option" onclick="window.parent.postMessage({func:'set_area', value:'Seguridad'}, '*')">Seguridad</button>
+    <button class="option" onclick="window.parent.postMessage({func:'set_area', value:'Parques'}, '*')">Parques</button>
+    <button class="option" onclick="window.parent.postMessage({func:'set_area', value:'Otra'}, '*')">Otra</button>
+    """, unsafe_allow_html=True)
+
+    # ESCUCHAR CLICK DEL HTML
+    st.components.v1.html("""
+        <script>
+        window.addEventListener('message', event => {
+            const data = event.data;
+            if (data.func == 'set_area') {
+                document.dispatchEvent(new CustomEvent('area-selected', {detail: data.value}));
+            }
+        });
+        </script>
+    """, height=0)
+
+    area = st.experimental_get_query_params().get("area", [""])[0]
 
 # --- PASO 2: TIPO ---
-elif st.session_state.step == 2:
+if st.session_state.step == 2:
     st.markdown(f'<div class="user-bubble">{st.session_state.area}</div>', unsafe_allow_html=True)
     st.markdown('<div class="bot-bubble">¿Quieres informar de una incidencia o hacer una propuesta?</div>', unsafe_allow_html=True)
 
-    cols = st.columns(2)
-    tipos = ["Incidencia","Propuesta"]
-    for i, tipo in enumerate(tipos):
-        if cols[i].button(tipo, key=f"tipo_{tipo}"):
-            st.session_state.tipo = tipo
-            st.session_state.step = 3
-            st.experimental_rerun()
+    st.markdown("""
+    <button class="option" onclick="window.parent.postMessage({func:'set_tipo', value:'Incidencia'}, '*')">Incidencia</button>
+    <button class="option" onclick="window.parent.postMessage({func:'set_tipo', value:'Propuesta'}, '*')">Propuesta</button>
+    """, unsafe_allow_html=True)
 
 # --- PASO 3: DESCRIPCIÓN (voz + texto) ---
-elif st.session_state.step == 3:
+if st.session_state.step == 3:
     st.markdown(f'<div class="user-bubble">{st.session_state.area}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="user-bubble">{st.session_state.tipo}</div>', unsafe_allow_html=True)
     st.markdown('<div class="bot-bubble">Describe tu mensaje usando voz o texto.</div>', unsafe_allow_html=True)
@@ -80,35 +92,28 @@ elif st.session_state.step == 3:
             recognition.start();
         }
         </script>
-
-        <button onclick="startRecognition()" 
-        style="background-color:#1faa59;color:white;
-        border:none;padding:12px 20px;
-        border-radius:30px;font-size:16px;margin-top:10px;">
-        🎤 Hablar
-        </button>
+        <button onclick="startRecognition()" style="background-color:#1faa59;color:white;border:none;padding:12px 20px;border-radius:30px;font-size:16px;margin-top:10px;">🎤 Hablar</button>
     """, height=80)
 
     if st.button("Continuar"):
         st.session_state.descripcion = descripcion
         st.session_state.step = 4
 
-# --- PASO 4: PUNTUACIÓN ---
-elif st.session_state.step == 4:
+# --- PASO 4: PUNTUACIÓN (barra) ---
+if st.session_state.step == 4:
     st.markdown(f'<div class="user-bubble">{st.session_state.area}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="user-bubble">{st.session_state.tipo}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="user-bubble">{st.session_state.descripcion}</div>', unsafe_allow_html=True)
     st.markdown('<div class="bot-bubble">¿Cómo valoras el servicio global? (1 = Muy malo, 5 = Excelente)</div>', unsafe_allow_html=True)
 
-    cols = st.columns(5)
-    for i in range(1,6):
-        if cols[i-1].button(str(i), key=f"punt_{i}"):
-            st.session_state.puntuacion = i
-            st.session_state.step = 5
-            st.experimental_rerun()
+    puntuacion = st.slider("", 1, 5, key="puntuacion")
+
+    if st.button("Continuar"):
+        st.session_state.puntuacion = puntuacion
+        st.session_state.step = 5
 
 # --- PASO 5: FINAL ---
-elif st.session_state.step == 5:
+if st.session_state.step == 5:
 
     data = {
         "fecha": datetime.now(),
