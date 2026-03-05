@@ -155,9 +155,20 @@ elif st.session_state.step == 5:
     else:
         df.to_csv(file, index=False)
 
-    st.markdown('<div class="bot-bubble">✅ Gracias por participar. Tu voz mejora esta ciudad.</div>', unsafe_allow_html=True)
+    mensaje_final = "Gracias por participar. Tu voz mejora esta ciudad."
+
+    st.markdown(f'<div class="bot-bubble">✅ {mensaje_final}</div>', unsafe_allow_html=True)
+
+    # 🔊 VOZ DEL BOT
+    st.components.v1.html(f"""
+        <script>
+        var msg = new SpeechSynthesisUtterance("{mensaje_final}");
+        msg.lang = "es-ES";
+        msg.rate = 1;
+        msg.pitch = 1;
+        speechSynthesis.speak(msg);
+        </script>
+    """, height=0)
 
     if st.button("Nueva conversación"):
         st.session_state.step = 1
-
-st.markdown('</div>', unsafe_allow_html=True)
