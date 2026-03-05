@@ -1,183 +1,136 @@
-import streamlit as st
-import pandas as pd
-from datetime import datetime
-import os
-
-st.set_page_config(page_title="Urna Digital", page_icon="🗳️")
-
-# ===== ESTILO CHAT =====
-
-st.markdown("""
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CitizenVoice</title>
 <style>
-
-.bot{
-background:#f1f1f1;
-padding:12px;
-border-radius:15px;
-margin-bottom:10px;
-width:fit-content;
-}
-
-.user{
-background:#1faa59;
-color:white;
-padding:12px;
-border-radius:15px;
-margin-bottom:10px;
-margin-left:auto;
-width:fit-content;
-}
-
+body { font-family: Arial; background:#eef2f3; margin:0; padding:0; display:flex; justify-content:center; }
+#chat { width: 100%; max-width: 500px; height: 90vh; overflow-y: auto; padding:10px; background:white; border-radius:10px; margin-top:10px; }
+.bubble { padding:12px; margin:5px 0; max-width:80%; border-radius:15px; }
+.bot { background:#f1f1f1; }
+.user { background:#1faa59; color:white; margin-left:auto; }
+button.option { background:#1faa59; color:white; border:none; border-radius:30px; padding:10px 20px; margin:3px; cursor:pointer; }
 </style>
-""", unsafe_allow_html=True)
-
-st.title("🗳️ Urna Digital")
-st.caption("Pon tu móvil y habla. Tu voz mejora la ciudad.")
-
-# ===== ESTADO =====
-
-if "area" not in st.session_state:
-    st.session_state.area=None
-
-if "tipo" not in st.session_state:
-    st.session_state.tipo=None
-
-if "descripcion" not in st.session_state:
-    st.session_state.descripcion=""
-
-if "puntuacion" not in st.session_state:
-    st.session_state.puntuacion=3
-
-# ===== PASO 1 =====
-
-st.markdown('<div class="bot">¿Sobre qué área quieres opinar?</div>', unsafe_allow_html=True)
-
-area = st.selectbox(
-"",
-["Selecciona","Urbanismo","Limpieza","Movilidad","Seguridad","Parques","Otra"]
-)
-
-if area!="Selecciona":
-
-    st.session_state.area=area
-    st.markdown(f'<div class="user">{area}</div>', unsafe_allow_html=True)
-
-# ===== PASO 2 =====
-
-if st.session_state.area:
-
-    st.markdown('<div class="bot">¿Es una incidencia o una propuesta?</div>', unsafe_allow_html=True)
-
-    tipo = st.selectbox(
-    "",
-    ["Selecciona","Incidencia","Propuesta"]
-    )
-
-    if tipo!="Selecciona":
-
-        st.session_state.tipo=tipo
-        st.markdown(f'<div class="user">{tipo}</div>', unsafe_allow_html=True)
-
-# ===== PASO 3 =====
-
-if st.session_state.tipo:
-
-    st.markdown('<div class="bot">Describe el problema o propuesta. Puedes hablar.</div>', unsafe_allow_html=True)
-
-    descripcion = st.text_area("")
-
-    st.components.v1.html("""
+</head>
+<body>
+<div id="chat"></div>
 
 <script>
+const chat = document.getElementById('chat');
 
-function startDictation() {
-
-if (window.hasOwnProperty('webkitSpeechRecognition')) {
-
-var recognition = new webkitSpeechRecognition();
-
-recognition.lang = "es-ES";
-
-recognition.onresult = function(e) {
-
-var text = e.results[0][0].transcript;
-
-const textarea = window.parent.document.querySelector('textarea');
-
-textarea.value = text;
-
-textarea.dispatchEvent(new Event('input', { bubbles: true }));
-
-};
-
-recognition.start();
-
-}
-
-}
-
-</script>
-
-<button onclick="startDictation()" style="background:#1faa59;color:white;padding:10px;border-radius:20px;border:none;">
-🎤 Hablar
-</button>
-
-""", height=80)
-
-    st.session_state.descripcion=descripcion
-
-# ===== PASO 4 =====
-
-if st.session_state.descripcion:
-
-    st.markdown('<div class="bot">¿Cómo valoras el servicio?</div>', unsafe_allow_html=True)
-
-    puntuacion = st.slider("",1,5,3)
-
-    st.session_state.puntuacion=puntuacion
-
-# ===== LOCALIZACION =====
-
-st.markdown('<div class="bot">Detectar ubicación 📍</div>', unsafe_allow_html=True)
-
-loc = st.components.v1.html("""
-
-<script>
-
-navigator.geolocation.getCurrentPosition(function(position) {
-
-const coords = position.coords.latitude + "," + position.coords.longitude;
-
-window.parent.postMessage(coords, "*");
-
-});
-
-</script>
-
-""", height=0)
-
-# ===== GUARDAR =====
-
-if st.button("Enviar opinión"):
-
-    data = {
-        "fecha":datetime.now(),
-        "area":st.session_state.area,
-        "tipo":st.session_state.tipo,
-        "descripcion":st.session_state.descripcion,
-        "puntuacion":st.session_state.puntuacion
+function addBot(message, speak=true){
+    const div = document.createElement('div');
+    div.className = 'bubble bot';
+    div.innerText = message;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    if(speak){
+        const utter = new SpeechSynthesisUtterance(message);
+        utter.lang = 'es-ES';
+        speechSynthesis.speak(utter);
     }
+}
 
-    df=pd.DataFrame([data])
+function addUser(message){
+    const div = document.createElement('div');
+    div.className = 'bubble user';
+    div.innerText = message;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+}
 
-    archivo="respuestas.csv"
+function askArea(){
+    addBot('¿Sobre qué área quieres opinar?');
+    ['Urbanismo','Limpieza','Movilidad','Seguridad','Parques','Otra'].forEach(a=>{
+        const btn = document.createElement('button');
+        btn.className='option';
+        btn.innerText=a;
+        btn.onclick=()=>{
+            addUser(a);
+            area=a;
+            chat.innerHTML=''; // siguiente pregunta limpia chat
+            askTipo();
+        }
+        chat.appendChild(btn);
+    });
+}
 
-    if os.path.exists(archivo):
+function askTipo(){
+    addBot('¿Es una incidencia o propuesta?');
+    ['Incidencia','Propuesta'].forEach(t=>{
+        const btn = document.createElement('button');
+        btn.className='option';
+        btn.innerText=t;
+        btn.onclick=()=>{
+            addUser(t);
+            tipo=t;
+            askDescripcion();
+        }
+        chat.appendChild(btn);
+    });
+}
 
-        df.to_csv(archivo,mode="a",header=False,index=False)
+function askDescripcion(){
+    addBot('Describe tu mensaje usando voz o texto.');
+    const input = document.createElement('input');
+    input.type='text';
+    input.placeholder='Escribe aquí o pulsa 🎤';
+    input.style.width='70%';
+    const mic = document.createElement('button');
+    mic.innerText='🎤';
+    mic.onclick=()=>{
+        if(window.hasOwnProperty('webkitSpeechRecognition')){
+            var recognition = new webkitSpeechRecognition();
+            recognition.lang='es-ES';
+            recognition.onresult=function(e){
+                input.value=e.results[0][0].transcript;
+            }
+            recognition.start();
+        }
+    }
+    const submit = document.createElement('button');
+    submit.innerText='Enviar';
+    submit.onclick=()=>{
+        addUser(input.value);
+        descripcion=input.value;
+        askPuntuacion();
+    }
+    chat.appendChild(input);
+    chat.appendChild(mic);
+    chat.appendChild(submit);
+}
 
-    else:
+function askPuntuacion(){
+    addBot('Valora el servicio (1 = Muy malo, 5 = Excelente)');
+    for(let i=1;i<=5;i++){
+        const btn = document.createElement('button');
+        btn.className='option';
+        btn.innerText=i;
+        btn.onclick=()=>{
+            addUser(i);
+            puntuacion=i;
+            askUbicacion();
+        }
+        chat.appendChild(btn);
+    }
+}
 
-        df.to_csv(archivo,index=False)
+function askUbicacion(){
+    addBot('Detectando ubicación 📍...');
+    navigator.geolocation.getCurrentPosition((pos)=>{
+        lat=pos.coords.latitude;
+        lon=pos.coords.longitude;
+        addBot('¡Listo! Gracias por participar.');
+        // Aquí enviar datos a Google Sheets via API / Google Forms
+        console.log({area,tipo,descripcion,puntuacion,lat,lon});
+    });
+}
 
-    st.success("Gracias. Tu voz mejora la ciudad.")
+let area='', tipo='', descripcion='', puntuacion=0, lat=0, lon=0;
+
+askArea();
+
+</script>
+</body>
+</html>
